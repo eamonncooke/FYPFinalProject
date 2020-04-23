@@ -68,8 +68,8 @@ public class PlayerController {
 
     @GetMapping("/viewFitnessTestChart")
     public ModelAndView getFitnessTestChart(ModelMap model) {
-        JSONArray testResults = chartData();
-        return new ModelAndView("/fitnessChart", "testResults", testResults);
+        String jsonArray = chartData().toString().replace("'", "\\'");
+        return new ModelAndView("/fitnessChart", "testResults", jsonArray);
     }
 
     @RequestMapping("/insertTest")
@@ -171,7 +171,6 @@ public class PlayerController {
             jo.put("name", name);
             jo.put("date", newDate);
             jo.put("time", Integer.toString(test.getTime()));
-            jo.put("postion", test.getPlayerId().getPostion());
 
             ja.put(jo);
         }

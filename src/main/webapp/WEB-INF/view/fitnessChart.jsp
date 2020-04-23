@@ -14,10 +14,22 @@
         <!--   D3 is always loaded before dimple as dimple is built on top of D3/references D3 funcctions
           here we are referencing the javascript files that are available on the web
           if you do not have web access you will have to reference the files in your project sfile structure as we did in the first tutorial -->
-        <script src="http://d3js.org/d3.v3.min.js"></script>
+        
+    <sec:authorize access="hasRole('COACH')">
+        <%@include file="navBarCoach.jsp"%>
+    </sec:authorize>
+
+    <sec:authorize access="hasRole('PLAYER')">
+        <%@include file="navBarPlayer.jsp"%>
+    </sec:authorize>
+    <center>
+    <h1>Fitness Test Results</h1>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
         <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
         <script type="text/javascript">
-            function draw(data) {
+            var x = draw();
+            function draw() {
                 "use strict";
 
                 var margin = 75,
@@ -31,7 +43,7 @@
                                 .attr("height", height + margin)
                                 .append('g')
                                 .attr('class','chart');
-
+                var data = JSON.parse('${testResults}');
                 var myChart = new dimple.chart(svg, data);
                 var x = myChart.addTimeAxis("x", "date");
                 x.dateParseFormat = "%m-%Y";
@@ -45,7 +57,7 @@
                 myChart.ease = "linear";
                 myChart.draw(1000);
                 myChart.legends = [];
-                var filterValues = dimple.getUniqueValues(data, "postion");
+                var filterValues = dimple.getUniqueValues(data, "name");
 
                 myLegend.shapes.selectAll("rect")
                 // Add a click event to each rectangle
@@ -75,7 +87,7 @@
                 filterValues = newFilters;
                 
                 // Filter the data
-                myChart.data = dimple.filterData(data, "postion", filterValues);
+                myChart.data = dimple.filterData(data, "name", filterValues);
                 
                 // Passing a duration parameter makes the chart animate. Without
                 // it there is no transition
@@ -83,17 +95,6 @@
                 })
             };
         </script>
-    <sec:authorize access="hasRole('COACH')">
-        <%@include file="navBarCoach.jsp"%>
-    </sec:authorize>
-
-    <sec:authorize access="hasRole('PLAYER')">
-        <%@include file="navBarPlayer.jsp"%>
-    </sec:authorize>
-
-
-    <script type="text/javascript">
-        d3.json('${testResults}', draw);
-    </script>
+        </center>
 </body>
 </html>

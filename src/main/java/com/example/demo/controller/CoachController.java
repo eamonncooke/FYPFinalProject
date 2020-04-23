@@ -85,7 +85,6 @@ public class CoachController {
         return new ModelAndView("/insertPlayer", model);
     }
 
-    // @RequestMapping(value = "/addAgent", method = RequestMethod.POST)
     @PostMapping("/insertPlayer")
     public ModelAndView addAPlayer(@Valid @ModelAttribute("player") Player player, BindingResult result, ModelMap model) {
         if (result.hasErrors()) {
@@ -230,7 +229,7 @@ public class CoachController {
     }
     @GetMapping("/viewFitnessTestChart")
     public ModelAndView getFitnessTestChart(ModelMap model) {
-        JSONArray testResults = chartData();
+        String testResults = chartData().toString().replace("'", "\\'");
         return new ModelAndView("/fitnessChart", "testResults", testResults);
     }
 
