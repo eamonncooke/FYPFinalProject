@@ -99,7 +99,8 @@ public class PlayerController {
 
         if (getLoggedInPlayer().getStravaActive() == null) {
             String Url = StravaURL.getStravaAuthURL() + "?client_id="
-                    + StravaURL.getClientId() + "&response_type=code&redirect_uri=" + StravaURL.getAppURL() + "&approval_prompt=force&scope="
+                    + StravaURL.getClientId() + "&response_type=code&redirect_uri=" + 
+                    StravaURL.getAppURL() + "&approval_prompt=force&scope="
                     + StravaURL.getScope();
             model.addAttribute("authUrl", Url);
             return new ModelAndView("/stravaActivities", model);
@@ -200,7 +201,8 @@ public class PlayerController {
 
         post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(post)) {
+        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  
+                CloseableHttpResponse response = httpClient.execute(post)) {
 
             String json = EntityUtils.toString(response.getEntity());
 
@@ -263,9 +265,11 @@ public class PlayerController {
         updateAccessToken(player);
         List<Splits> list = new ArrayList<Splits>();
         StravaActivity sa = new StravaActivity();
-        HttpGet get = new HttpGet("https://www.strava.com/api/v3/activities/" + activityId + "?access_token=" + service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
+        HttpGet get = new HttpGet("https://www.strava.com/api/v3/activities/" + activityId + "?access_token=" + 
+                service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
 
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(get)) {
+        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  
+                CloseableHttpResponse response = httpClient.execute(get)) {
 
             String json = EntityUtils.toString(response.getEntity());
             JSONObject activity = new JSONObject(json);

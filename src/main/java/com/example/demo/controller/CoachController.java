@@ -18,6 +18,7 @@ import com.example.demo.strava.model.Splits;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -236,6 +237,10 @@ public class CoachController {
     public void getListofActivitiesByPlayer(Player player) throws IOException {
         HttpGet get = new HttpGet("https://www.strava.com/api/v3/athlete/activities/?access_token=" + service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
 
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1);
+        Date lastActivityRecordDate = cal.getTime();
+        
         try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(get)) {
 
             String json = EntityUtils.toString(response.getEntity());
@@ -246,7 +251,7 @@ public class CoachController {
 
                 Date date = convertStringToDate(activity.getString("start_date_local"));
 
-                if (player.getLastStravaUpdated() == null || player.getLastStravaUpdated().before(date)) {
+                if (lastActivityRecordDate.before(date) || player.getLastStravaUpdated().before(date)) {
                     JSONObject map = activity.getJSONObject("map");
                     String id = map.getString("id").substring(1);
 
@@ -477,7 +482,6 @@ public class CoachController {
         for (Testing test : testList) {
             month = Integer.toString(test.getDate().getMonth() + 1);
             year = Integer.toString(test.getDate().getYear()+1900);
-            System.out.println(year);
             newDate = month + "-" + year;
             name = test.getPlayerId().getAuthUserId().getFirstName() + " " + test.getPlayerId().getAuthUserId().getSurname();
 

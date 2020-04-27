@@ -41,7 +41,7 @@
             return confirm('Are you sure?');
         }
     </script>
-    <center><h1>List of Recorded Training for ${activity.playerID.authUserId.firstName}  ${activity.playerID.authUserId.surname}</h1>
+    <center><h1>List of Recorded Training</h1>
 
 
 

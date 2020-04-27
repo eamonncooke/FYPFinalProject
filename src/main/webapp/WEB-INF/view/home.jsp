@@ -12,7 +12,7 @@
 
     <center>
         <h1>Welcome ${user.firstName}</h1>
-            <sec:authorize access="hasRole('PLAYER')">
+        <sec:authorize access="hasRole('PLAYER')">
             <br>
             <h2>Site Navigation</h2>
             <br>

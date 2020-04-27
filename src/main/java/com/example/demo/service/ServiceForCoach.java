@@ -194,12 +194,12 @@ public class ServiceForCoach {
         trans.commit();
     }
     
-    public void addNewTraining(Activity training)
+    public void addNewTraining(Activity activity)
     {
         EntityManager em = DBUtil.getEmf().createEntityManager();
         EntityTransaction trans = em.getTransaction();
         trans.begin();
-        em.persist(training);
+        em.persist(activity);
         trans.commit();
     }
     

@@ -56,9 +56,9 @@
                 var myLegend = myChart.addLegend(1350, 100, 60, 300, "Right");
                 myChart.ease = "linear";
                 myChart.draw(1000);
+                
                 myChart.legends = [];
                 var filterValues = dimple.getUniqueValues(data, "name");
-
                 myLegend.shapes.selectAll("rect")
                 // Add a click event to each rectangle
                     .on("click", function (e) {
