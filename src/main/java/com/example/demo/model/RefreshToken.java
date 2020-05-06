@@ -9,6 +9,8 @@ import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -26,16 +28,22 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "RefreshToken.findAll", query = "SELECT r FROM RefreshToken r"),
+    @NamedQuery(name = "RefreshToken.findById", query = "SELECT r FROM RefreshToken r WHERE r.id = :id"),
     @NamedQuery(name = "RefreshToken.findByAthleteId", query = "SELECT r FROM RefreshToken r WHERE r.athleteId = :athleteId"),
-    @NamedQuery(name = "RefreshToken.findByRefreshTokenCode", query = "SELECT r FROM RefreshToken r WHERE r.refreshTokenCode = :refreshTokenCode")})
+    @NamedQuery(name = "RefreshToken.findByRefreshTokenCode", query = "SELECT r FROM RefreshToken r WHERE r.refreshTokenCode = :refreshTokenCode"),
+    @NamedQuery(name = "RefreshToken.findLastRefreshTokenNumber", query = "SELECT r FROM RefreshToken r ORDER BY r.id DESC")})
 public class RefreshToken implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "id")
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Column(name = "athlete_id")
-    private Integer athleteId;
+    private int athleteId;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 55)
@@ -45,20 +53,29 @@ public class RefreshToken implements Serializable {
     public RefreshToken() {
     }
 
-    public RefreshToken(Integer athleteId) {
-        this.athleteId = athleteId;
+    public RefreshToken(Integer id) {
+        this.id = id;
     }
 
-    public RefreshToken(Integer athleteId, String refreshTokenCode) {
+    public RefreshToken(Integer id, int athleteId, String refreshTokenCode) {
+        this.id = id;
         this.athleteId = athleteId;
         this.refreshTokenCode = refreshTokenCode;
     }
 
-    public Integer getAthleteId() {
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public int getAthleteId() {
         return athleteId;
     }
 
-    public void setAthleteId(Integer athleteId) {
+    public void setAthleteId(int athleteId) {
         this.athleteId = athleteId;
     }
 
@@ -73,7 +90,7 @@ public class RefreshToken implements Serializable {
     @Override
     public int hashCode() {
         int hash = 0;
-        hash += (athleteId != null ? athleteId.hashCode() : 0);
+        hash += (id != null ? id.hashCode() : 0);
         return hash;
     }
 
@@ -84,7 +101,7 @@ public class RefreshToken implements Serializable {
             return false;
         }
         RefreshToken other = (RefreshToken) object;
-        if ((this.athleteId == null && other.athleteId != null) || (this.athleteId != null && !this.athleteId.equals(other.athleteId))) {
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -92,7 +109,7 @@ public class RefreshToken implements Serializable {
 
     @Override
     public String toString() {
-        return "com.example.demo.model.RefreshToken[ athleteId=" + athleteId + " ]";
+        return "com.example.demo.model.RefreshToken[ id=" + id + " ]";
     }
     
 }

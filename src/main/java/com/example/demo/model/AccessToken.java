@@ -9,6 +9,8 @@ import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -26,17 +28,23 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "AccessToken.findAll", query = "SELECT a FROM AccessToken a"),
+    @NamedQuery(name = "AccessToken.findById", query = "SELECT a FROM AccessToken a WHERE a.id = :id"),
     @NamedQuery(name = "AccessToken.findByAthleteId", query = "SELECT a FROM AccessToken a WHERE a.athleteId = :athleteId"),
     @NamedQuery(name = "AccessToken.findByAccessTokenCode", query = "SELECT a FROM AccessToken a WHERE a.accessTokenCode = :accessTokenCode"),
-    @NamedQuery(name = "AccessToken.findByExpiresAt", query = "SELECT a FROM AccessToken a WHERE a.expiresAt = :expiresAt")})
+    @NamedQuery(name = "AccessToken.findByExpiresAt", query = "SELECT a FROM AccessToken a WHERE a.expiresAt = :expiresAt"),
+    @NamedQuery(name = "AccessToken.findLastAccessTokenNumber", query = "SELECT a FROM AccessToken a ORDER BY a.id DESC")})
 public class AccessToken implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "id")
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Column(name = "athlete_id")
-    private Integer athleteId;
+    private int athleteId;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 55)
@@ -48,21 +56,30 @@ public class AccessToken implements Serializable {
     public AccessToken() {
     }
 
-    public AccessToken(Integer athleteId) {
-        this.athleteId = athleteId;
+    public AccessToken(Integer id) {
+        this.id = id;
     }
 
-    public AccessToken(Integer athleteId, String accessTokenCode, Integer expiresAt) {
+    public AccessToken(Integer id, int athleteId, String accessTokenCode, int expiresAt) {
+        this.id = id;
         this.athleteId = athleteId;
         this.accessTokenCode = accessTokenCode;
         this.expiresAt = expiresAt;
     }
 
-    public Integer getAthleteId() {
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public int getAthleteId() {
         return athleteId;
     }
 
-    public void setAthleteId(Integer athleteId) {
+    public void setAthleteId(int athleteId) {
         this.athleteId = athleteId;
     }
 
@@ -85,7 +102,7 @@ public class AccessToken implements Serializable {
     @Override
     public int hashCode() {
         int hash = 0;
-        hash += (athleteId != null ? athleteId.hashCode() : 0);
+        hash += (id != null ? id.hashCode() : 0);
         return hash;
     }
 
@@ -96,7 +113,7 @@ public class AccessToken implements Serializable {
             return false;
         }
         AccessToken other = (AccessToken) object;
-        if ((this.athleteId == null && other.athleteId != null) || (this.athleteId != null && !this.athleteId.equals(other.athleteId))) {
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -104,7 +121,7 @@ public class AccessToken implements Serializable {
 
     @Override
     public String toString() {
-        return "com.example.demo.model.AccessToken[ athleteId=" + athleteId + " ]";
+        return "com.example.demo.model.AccessToken[ id=" + id + " ]";
     }
-    
+
 }

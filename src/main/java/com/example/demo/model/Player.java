@@ -23,10 +23,13 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
+import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.format.annotation.DateTimeFormat;
 
 /**
@@ -58,8 +61,9 @@ public class Player implements Serializable {
     private Integer playerId;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 8)
+    @Size(min = 1, max = 8, message="Must enter Forward or Back")
     @Column(name = "postion")
+    @NotBlank(message = "Field is required")
     private String postion;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Basic(optional = false)
@@ -68,6 +72,7 @@ public class Player implements Serializable {
     private Date dob;
     @Column(name = "height")
     private Integer height;
+    @DecimalMin(value="0", message = "Value must be greater than zero")
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Column(name = "weight")
     private Float weight;

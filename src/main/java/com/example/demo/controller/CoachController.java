@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.ws.rs.QueryParam;
 import org.apache.http.NameValuePair;
@@ -67,23 +68,36 @@ public class CoachController {
     ServiceForCoach service;
 
     @GetMapping("")
-    public ModelAndView getPlayers(ModelMap model) {
-        return new ModelAndView("/viewPlayers", "playerList", service.getAllPlayers());
+    public ModelAndView getPlayers(ModelMap model, HttpServletRequest request) {
+        if (request.isUserInRole("COACH")) {
+            return new ModelAndView("/viewPlayers", "playerList", service.getAllPlayers());
+        } else {
+            return new ModelAndView("redirect:/");
+        }
+
     }
 
     @GetMapping("/addPlayer")
-    public ModelAndView displayPlayerAddForm(ModelMap model) {
+    public ModelAndView displayPlayerAddForm(ModelMap model, HttpServletRequest request) {
 //        Player p = new Player();
 //        p.setPlayerId(service.getNewPlayerId());
 //        p.getAuthUserId().setRole("PLAYER");
 //        p.getAuthUserId().setAuthUserId(service.getNewAuthUserId());
+        if (request.isUserInRole("COACH")) {
+            List<String> postion = new ArrayList<>();
+            postion.add("Back");
+            postion.add("Forward");
+            model.addAttribute("postionList", postion);
+            model.addAttribute("authUserID", service.getNewAuthUserId());
+            model.addAttribute("role", "PLAYER");
+            model.addAttribute("player", new Player());
+            model.addAttribute("playerID", service.getNewPlayerId());
 
-        model.addAttribute("authUserID", service.getNewAuthUserId());
-        model.addAttribute("role", "PLAYER");
-        model.addAttribute("player", new Player());
-        model.addAttribute("playerID", service.getNewPlayerId());
+            return new ModelAndView("/insertPlayer", model);
+        } else {
+            return new ModelAndView("redirect:/");
+        }
 
-        return new ModelAndView("/insertPlayer", model);
     }
 
     @PostMapping("/insertPlayer")
@@ -92,19 +106,24 @@ public class CoachController {
             System.out.println(result.getAllErrors());
             return new ModelAndView("/insertPlayer");
         }
+        
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         String encodedPassword = passwordEncoder.encode(player.getAuthUserId().getPassword());
         player.getAuthUserId().setPassword(encodedPassword);
         service.addPlayer(player);
         return new ModelAndView("redirect:/coach");
     }
-    
 
     @RequestMapping("/editPassword")
-    public ModelAndView editPasswordForm(@QueryParam("id") int id) {
-        Player p = service.getPlayerByPlayerId(id);
-        p.getAuthUserId().setPassword(null);
-        return new ModelAndView("/editPassword", "user", p.getAuthUserId());
+    public ModelAndView editPasswordForm(@QueryParam("id") int id, HttpServletRequest request) {
+
+        if (request.isUserInRole("COACH")) {
+            Player p = service.getPlayerByPlayerId(id);
+            p.getAuthUserId().setPassword(null);
+            return new ModelAndView("/editPassword", "user", p.getAuthUserId());
+        } else {
+            return new ModelAndView("redirect:/");
+        }
     }
 
     @PostMapping("/insertPassword")
@@ -124,16 +143,17 @@ public class CoachController {
     public ModelAndView getTestResults(ModelMap model) {
         return new ModelAndView("/viewTestResultsList", "testList", service.getAllTest());
     }
+
     @GetMapping("/deleteTest")
     public ModelAndView deleteTest(@QueryParam("id") int id) {
         service.deleteFitnessTest(id);
         return new ModelAndView("redirect:/coach/viewResults");
     }
-    
+
     @GetMapping("/deletePlayer")
     public ModelAndView deletePlayer(@QueryParam("id") int id) {
         Player p = service.getPlayerByPlayerId(id);
-        if(p.getStravaActive()=="Activated"){
+        if (p.getStravaActive() == "Activated") {
             service.deleteRefreshToken(p.getStravaUserId());
             service.deleteAccessToken(p.getStravaUserId());
         }
@@ -154,16 +174,20 @@ public class CoachController {
     }
 
     @GetMapping("/viewActivity")
-    public ModelAndView getActivityList(ModelMap model, @QueryParam("id") int id) {
-        Player player = service.getPlayerByPlayerId(id);
-        List list;
-        Collection test = player.getActivityCollection();
-        if (test instanceof List) {
-            list = (List) test;
+    public ModelAndView getActivityList(ModelMap model, @QueryParam("id") int id, HttpServletRequest request) {
+        if (request.isUserInRole("COACH")) {
+            Player player = service.getPlayerByPlayerId(id);
+            List list;
+            Collection test = player.getActivityCollection();
+            if (test instanceof List) {
+                list = (List) test;
+            } else {
+                list = new ArrayList(test);
+            }
+            return new ModelAndView("/viewTrainingRecorded", "trainingList", list);
         } else {
-            list = new ArrayList(test);
+            return new ModelAndView("redirect:/");
         }
-        return new ModelAndView("/viewTrainingRecorded", "trainingList", list);
     }
 
     @GetMapping("/viewIndividualActivity")
@@ -171,7 +195,7 @@ public class CoachController {
 
         StravaActivity activity = getActivityDetailsByActivityId(id);
         String map = activity.getMap().replace("\\", "\\\\");
-          
+
         activity.setMap(map);
         model.addAttribute("splits", activity.getSplit());
         model.addAttribute("activity", activity);
@@ -190,8 +214,12 @@ public class CoachController {
     }
 
     @GetMapping("/viewAllActivity")
-    public ModelAndView getAllActivityList(ModelMap model) {
-        return new ModelAndView("/viewAllActivities", "trainingList", service.getActivityList());
+    public ModelAndView getAllActivityList(ModelMap model, HttpServletRequest request) {
+        if (request.isUserInRole("COACH")) {
+            return new ModelAndView("/viewAllActivities", "trainingList", service.getActivityList());
+        } else {
+            return new ModelAndView("redirect:/");
+        }
     }
 
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -228,6 +256,7 @@ public class CoachController {
         }
         httpClient.close();
     }
+
     @GetMapping("/viewFitnessTestChart")
     public ModelAndView getFitnessTestChart(ModelMap model) {
         String testResults = chartData().toString().replace("'", "\\'");
@@ -236,11 +265,18 @@ public class CoachController {
 
     public void getListofActivitiesByPlayer(Player player) throws IOException {
         HttpGet get = new HttpGet("https://www.strava.com/api/v3/athlete/activities/?access_token=" + service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
+        int update = 0;
+        Date lastActivityRecordDate;
 
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MONTH, -1);
-        Date lastActivityRecordDate = cal.getTime();
-        
+        if (player.getLastStravaUpdated() == null) {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MONTH, -1);
+            lastActivityRecordDate = cal.getTime();
+            System.out.println(lastActivityRecordDate);
+        } else {
+            lastActivityRecordDate = player.getLastStravaUpdated();
+        }
+
         try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(get)) {
 
             String json = EntityUtils.toString(response.getEntity());
@@ -250,8 +286,9 @@ public class CoachController {
                 JSONObject activity = activityList.getJSONObject(i);
 
                 Date date = convertStringToDate(activity.getString("start_date_local"));
-
-                if (lastActivityRecordDate.before(date) || player.getLastStravaUpdated().before(date)) {
+                System.out.println(lastActivityRecordDate.before(date));
+                if (lastActivityRecordDate.before(date)) {
+                    System.out.println("In if statement to get data");
                     JSONObject map = activity.getJSONObject("map");
                     String id = map.getString("id").substring(1);
 
@@ -308,14 +345,16 @@ public class CoachController {
                     a.setPlayerId(player);
                     player.getActivityCollection().add(a);
                     service.updatePlayer(player);
-
+                    update++;
                 } else {
                     break;
                 }
             }
-            Date d = new Date();
-            player.setLastStravaUpdated(d);
-            service.updatePlayer(player);
+            if (update > 0) {
+                Date d = new Date();
+                player.setLastStravaUpdated(d);
+                service.updatePlayer(player);
+            }
         }
         httpClient.close();
     }
@@ -474,6 +513,7 @@ public class CoachController {
         }
 
     }
+
     private JSONArray chartData() {
         List<Testing> testList = service.getAllTest();
         String name;
@@ -481,7 +521,7 @@ public class CoachController {
         JSONArray ja = new JSONArray();
         for (Testing test : testList) {
             month = Integer.toString(test.getDate().getMonth() + 1);
-            year = Integer.toString(test.getDate().getYear()+1900);
+            year = Integer.toString(test.getDate().getYear() + 1900);
             newDate = month + "-" + year;
             name = test.getPlayerId().getAuthUserId().getFirstName() + " " + test.getPlayerId().getAuthUserId().getSurname();
 

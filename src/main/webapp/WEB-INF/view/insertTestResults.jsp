@@ -20,6 +20,7 @@
         
         <form:input path="testId" type="hidden" value="${testingID}" readonly="true"/>
         
+        <form:input path="playerId" type="hidden" value="${playerID}" readonly="true"/>
         
         <p><form:label path="time">Time test was completed in (sec)</form:label>
             <form:input path="time"/></p>

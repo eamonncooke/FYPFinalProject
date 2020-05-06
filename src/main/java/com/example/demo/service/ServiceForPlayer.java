@@ -86,6 +86,24 @@ public class ServiceForPlayer {
         return listingNo;
     }
     
+    public int getNewRefreshTokenNum()
+    {
+        EntityManager em = DBUtil.getEmf().createEntityManager();
+        RefreshToken rf = (RefreshToken) em.createNamedQuery("RefreshToken.findLastRefreshTokenNumber")
+                .setMaxResults(1).getSingleResult();      
+        int listingNo = rf.getId() + 1;
+        return listingNo;
+    }
+    
+    public int getNewAccessTokenNum()
+    {
+        EntityManager em = DBUtil.getEmf().createEntityManager();
+        AccessToken at = (AccessToken) em.createNamedQuery("AccessToken.findLastAccessTokenNumber")
+                .setMaxResults(1).getSingleResult();      
+        int listingNo = at.getId()+ 1;
+        return listingNo;
+    }
+    
     public void addNewTest(Testing test)
     {
         EntityManager em = DBUtil.getEmf().createEntityManager();
@@ -97,7 +115,6 @@ public class ServiceForPlayer {
     
     public void addFirstAccessToken(AccessToken at)
     {
-        System.out.println("addNewAccessToken");
         EntityManager em = DBUtil.getEmf().createEntityManager();
         EntityTransaction trans = em.getTransaction();
         trans.begin();

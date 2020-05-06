@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 import javax.validation.Valid;
 import javax.ws.rs.QueryParam;
@@ -73,13 +74,19 @@ public class PlayerController {
     }
 
     @RequestMapping("/insertTest")
-    public ModelAndView insertTest(ModelMap model) {
-        int testingId = service.getNewTestingNum();
-        //model.addAttribute("playerID", player);
-        model.addAttribute("testingID", testingId);
-        model.addAttribute("testResult", new Testing());
+    public ModelAndView insertTest(ModelMap model, HttpServletRequest request) {
+        if (request.isUserInRole("PLAYER")) {
+            int testingId = service.getNewTestingNum();
+            model.addAttribute("playerID", getLoggedInPlayer());
+            System.out.println(getLoggedInPlayer());
+            model.addAttribute("testingID", testingId);
+            model.addAttribute("testResult", new Testing());
 
-        return new ModelAndView("/insertTestResults", model);
+            return new ModelAndView("/insertTestResults", model);
+        }else{
+            return new ModelAndView("redirect:/coach/viewResults");
+        }
+
     }
 
     @PostMapping("/insertNewTest")
@@ -88,9 +95,10 @@ public class PlayerController {
         test.setPlayerId(player);
         if (result.hasErrors()) {
             System.out.println(result.getAllErrors());
-            return new ModelAndView("redirect:/player/viewResults");
+            return new ModelAndView("/insertTestResults");
         }
-        service.addNewTest(test);
+        player.getTestingCollection().add(test);
+        service.updatePlayer(player);
         return new ModelAndView("redirect:/player/viewResults");
     }
 
@@ -99,8 +107,8 @@ public class PlayerController {
 
         if (getLoggedInPlayer().getStravaActive() == null) {
             String Url = StravaURL.getStravaAuthURL() + "?client_id="
-                    + StravaURL.getClientId() + "&response_type=code&redirect_uri=" + 
-                    StravaURL.getAppURL() + "&approval_prompt=force&scope="
+                    + StravaURL.getClientId() + "&response_type=code&redirect_uri="
+                    + StravaURL.getAppURL() + "&approval_prompt=force&scope="
                     + StravaURL.getScope();
             model.addAttribute("authUrl", Url);
             return new ModelAndView("/stravaActivities", model);
@@ -128,13 +136,13 @@ public class PlayerController {
             return new ModelAndView("redirect:/player/activitiesPage");
         }
     }
-    
+
     @GetMapping("/viewIndividualActivity")
     public ModelAndView getActivity(ModelMap model, @QueryParam("id") String id) throws IOException {
 
         StravaActivity activity = getActivityDetailsByActivityId(id);
         String map = activity.getMap().replace("\\", "\\\\");
-          
+
         activity.setMap(map);
         model.addAttribute("splits", activity.getSplit());
         model.addAttribute("activity", activity);
@@ -143,17 +151,21 @@ public class PlayerController {
 
     @GetMapping("/removeStrava")
     public ModelAndView deletePlayer() {
-        
+
         Player p = getLoggedInPlayer();
-        
-        service.deleteRefreshToken(p.getStravaUserId());
-        service.deleteAccessToken(p.getStravaUserId());
-        p.getActivityCollection().clear();
+
+        service.deleteRefreshToken(service.getRefreshTokenById(p.getStravaUserId()).getId());
+        service.deleteAccessToken(service.getAccessTokenById(p.getStravaUserId()).getId());
+
+        if (!p.getActivityCollection().isEmpty()) {
+            p.getActivityCollection().clear();
+        }
+
         p.setStravaActive(null);
         p.setLastStravaUpdated(null);
         p.setStravaUserId(null);
         service.editPlayer(p);
-        
+
         return new ModelAndView("redirect:/");
     }
 
@@ -164,7 +176,7 @@ public class PlayerController {
         JSONArray ja = new JSONArray();
         for (Testing test : testList) {
             month = Integer.toString(test.getDate().getMonth() + 1);
-            year = Integer.toString(test.getDate().getYear()+1900);
+            year = Integer.toString(test.getDate().getYear() + 1900);
             newDate = month + "-" + year;
             name = test.getPlayerId().getAuthUserId().getFirstName() + " " + test.getPlayerId().getAuthUserId().getSurname();
 
@@ -201,8 +213,7 @@ public class PlayerController {
 
         post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  
-                CloseableHttpResponse response = httpClient.execute(post)) {
+        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(post)) {
 
             String json = EntityUtils.toString(response.getEntity());
 
@@ -213,12 +224,14 @@ public class PlayerController {
             JSONObject athlete = StravaAccess.getJSONObject("athlete");
             int athleteID = athlete.getInt("id");
 
-            AccessToken at = new AccessToken(athleteID, accessToken, expiresAt);
-            RefreshToken rt = new RefreshToken(athleteID, refreshToken);
+            int newAccessTokenId = service.getNewAccessTokenNum();
+            int newRefreshTokenId = service.getNewRefreshTokenNum();
+            AccessToken at = new AccessToken(newAccessTokenId, athleteID, accessToken, expiresAt);
+            RefreshToken rt = new RefreshToken(newRefreshTokenId, athleteID, refreshToken);
             Player player = getLoggedInPlayer();
             player.setStravaActive("Activated");
             player.setStravaUserId(athleteID);
-
+            System.out.println(player.getAuthUserId().getFirstName());
             service.updatePlayer(player);
             service.addFirstAccessToken(at);
             service.addFirstRefreshToken(rt);
@@ -265,11 +278,10 @@ public class PlayerController {
         updateAccessToken(player);
         List<Splits> list = new ArrayList<Splits>();
         StravaActivity sa = new StravaActivity();
-        HttpGet get = new HttpGet("https://www.strava.com/api/v3/activities/" + activityId + "?access_token=" + 
-                service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
+        HttpGet get = new HttpGet("https://www.strava.com/api/v3/activities/" + activityId + "?access_token="
+                + service.getAccessTokenById(player.getStravaUserId()).getAccessTokenCode());
 
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  
-                CloseableHttpResponse response = httpClient.execute(get)) {
+        try ( CloseableHttpClient httpClient = HttpClients.createDefault();  CloseableHttpResponse response = httpClient.execute(get)) {
 
             String json = EntityUtils.toString(response.getEntity());
             JSONObject activity = new JSONObject(json);

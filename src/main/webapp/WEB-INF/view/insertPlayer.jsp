@@ -46,7 +46,7 @@
             </tr>
             <tr>
                 <td><form:label path="postion">Position</form:label></td>
-                <td><form:input path="postion" /></td> 
+                <td><form:select path="postion" items="${postionList}"/></td> 
                 <td style="color:red"><form:errors path="postion"/></td>
             </tr>
             <tr>
