@@ -77,8 +77,8 @@ public class PlayerController {
     public ModelAndView insertTest(ModelMap model, HttpServletRequest request) {
         if (request.isUserInRole("PLAYER")) {
             int testingId = service.getNewTestingNum();
-            model.addAttribute("playerID", getLoggedInPlayer());
-            System.out.println(getLoggedInPlayer());
+            //model.addAttribute("playerID", getLoggedInPlayer());
+            //System.out.println(getLoggedInPlayer());
             model.addAttribute("testingID", testingId);
             model.addAttribute("testResult", new Testing());
 
